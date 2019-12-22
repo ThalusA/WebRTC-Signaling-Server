@@ -8,6 +8,7 @@ io.on('connection', function (socket) {
         console.log("Register Endpoint");
         if (data.username && data.streamInfo && socket.id) {
             users[data.username] = { id: socket.id, streamInfo: data.streamInfo };
+            socket.join(socket.id);
         } else {
             socket.emit('register error', { error: "Invalid request." });
         }
@@ -16,6 +17,7 @@ io.on('connection', function (socket) {
         console.log("Unregister Endpoint");
         if (data.username && users[data.username]) {
             users[data.username] = null;
+            socket.leave(socket.id);
         } else {
             socket.emit('unregister error', { error: "Invalid request." });
         }
@@ -23,7 +25,7 @@ io.on('connection', function (socket) {
     socket.on('call', function (data) {
         if (data.username && data.usernameToCall && users[data.usernameToCall]) {
             socket.emit('user found', { username: data.usernameToCall, streamInfo: users[data.usernameToCall].streamInfo });
-            io.clients[users[data.usernameToCall].id].emit('called', { username: data.username, streamInfo: users[data.username].streamInfo });
+            io.to(users[data.usernameToCall].id).emit('called', { username: data.username, streamInfo: users[data.username].streamInfo });
         } else {
             socket.emit('invalid user', { error: "Invalid user." });
         }
