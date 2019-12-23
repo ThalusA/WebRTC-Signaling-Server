@@ -78,6 +78,7 @@ io.on('connection', function (socket) {
                     io.to(users[session.responder].id).emit('hangup', { username: data.username });
                 }
             });
+            callingSession = callingSession.filter(session => session.responder != data.username && session.caller != data.username);
         } else {
             console.log(`Invalid hangup request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid hangup request", code: ERRORCODE.EHANGUP });
