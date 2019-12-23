@@ -30,7 +30,15 @@ io.on('connection', function (socket) {
         console.log("Unregister Endpoint");
         if (data.username && users[data.username]) {
             console.log(`The user named '${data.username}' has been unregistered.`);
-            users[data.username] = null;
+            callingSession.forEach(session => {
+                if (session.responder == data.username) {
+                    io.to(users[session.caller].id).emit('hangup', { username: data.username });
+                } else if (session.caller == data.username) {
+                    io.to(users[session.responder].id).emit('hangup', { username: data.username });
+                }
+            });
+            callingSession = callingSession.filter(session => session.responder != data.username && session.caller != data.username);
+            delete users[data.username];
             socket.leave(socket.id);
         } else {
             console.log(`Invalid unregistration request :\n${JSON.stringify(data, null, 4)}`);
