@@ -11,7 +11,8 @@ const ERRORCODE = {
     EACALL: 4,
     EDCALL: 5,
     EICEUPDATE: 6,
-    EHANGUP: 7
+    EHANGUP: 7,
+    EANSCALL: 8
 };
 
 io.on('connection', function (socket) {
@@ -57,12 +58,19 @@ io.on('connection', function (socket) {
             socket.emit('error', { error: "Invalid user called.", code: ERRORCODE.ECALL });
         }
     });
+    socket.on('call answer', function (data) {
+        if (data.caller && data.responder && data.streamInfo && users[data.responder] && users[data.caller]) {
+            io.to(users[data.responder].id).emit('call answer', { username: data.caller, streamInfo: data.streamInfo, candidates: users[data.caller].iceCandidates });
+            callingSession.push({ caller: data.caller, responder: data.responder, date: Date.now() });
+        } else {
+            console.log(`Invalid call answer request :\n${JSON.stringify(data, null, 4)}`);
+            socket.emit("error", { error: "Invalid call answer request", code: ERRORCODE.EANSCALL });
+        }
+    });
     socket.on('call accept', function (data) {
-        if (data.caller && data.responder) {
+        if (data.caller && data.responder && users[data.caller] && users[data.responder]) {
             console.log(`The user '${data.responder}' has answered to '${data.caller}'`);
             io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: users[data.responder].streamInfo, candidates: users[data.responder].iceCandidates });
-            socket.emit('call info', { username: data.caller, streamInfo: users[data.caller].streamInfo, candidates: users[data.caller].iceCandidates });
-            callingSession.push({ caller: data.caller, responder: data.responder, date: Date.now() });
         } else {
             console.log(`Invalid call accept request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid call accept request", code: ERRORCODE.EACALL });
