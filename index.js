@@ -103,7 +103,7 @@ io.on('connection', function (socket) {
     });
     socket.on('ice update', function (data) {
         if (data.username && data.candidate && users[data.username]) {
-            console.log(`The user called '${data.username}' added to its ICECandidates : ${data.candidate}`);
+            console.log(`The user called '${data.username}' added to its ICECandidates : ${data.candidate.candidate}`);
             users[data.username].iceCandidates.push(data.candidate);
             callingSession.forEach(session => {
                 if (session.responder == data.username) {
