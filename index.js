@@ -61,7 +61,7 @@ io.on('connection', function (socket) {
         if (data.caller && data.responder) {
             console.log(`The user '${data.responder}' has answered to '${data.caller}'`);
             io.to(users[data.caller].id).emit('ice receive', { candidate: users[data.responder].iceCandidates });
-            io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: users[data.responder].streamInfo });.
+            io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: users[data.responder].streamInfo });
             socket.emit('ice receive', { candidate: users[data.caller].iceCandidates });
             socket.emit('call info', { username: data.caller, streamInfo: users[data.caller].streamInfo });
             callingSession.push({ caller: data.caller, responder: data.responder, date: Date.now() });
