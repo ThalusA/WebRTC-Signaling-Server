@@ -18,9 +18,9 @@ const ERRORCODE = {
 io.on('connection', function (socket) {
     console.log('New connection from ' + socket.handshake.address);
     socket.on('register', function (data) {
-        if (data.username && data.streamInfo && socket.id) {
+        if (data.username && socket.id) {
             console.log(`A new user named '${data.username}' has been registered (with SocketID = ${socket.id})`);
-            users[data.username] = { id: socket.id, streamInfo: data.streamInfo, iceCandidates: [] };
+            users[data.username] = { id: socket.id, iceCandidates: [] };
             socket.join(socket.id);
         } else {
             console.log(`Invalid registration request :\n${JSON.stringify(data, null, 4)}`);
@@ -43,7 +43,8 @@ io.on('connection', function (socket) {
             socket.leave(socket.id);
         } else {
             console.log(`Invalid unregistration request :\n${JSON.stringify(data, null, 4)}`);
-            socket.emit('error', { error: "Invalid unregister request.", code: ERRORCODE.EUNREGISTER });
+            if (socket.connected)
+                socket.emit('error', { error: "Invalid unregister request.", code: ERRORCODE.EUNREGISTER });
         }
     });
     socket.on('call', function (data) {
@@ -70,7 +71,7 @@ io.on('connection', function (socket) {
     socket.on('call accept', function (data) {
         if (data.caller && data.responder && users[data.caller] && users[data.responder]) {
             console.log(`The user '${data.responder}' has answered to '${data.caller}'`);
-            io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: users[data.responder].streamInfo, candidates: users[data.responder].iceCandidates });
+            io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: data.streamInfo, candidates: users[data.responder].iceCandidates });
         } else {
             console.log(`Invalid call accept request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid call accept request", code: ERRORCODE.EACALL });
