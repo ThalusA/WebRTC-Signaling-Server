@@ -83,17 +83,17 @@ io.on('connection', function (socket) {
     });
     socket.on('hangup', function (data) {
         if (data.username && users[data.username]) {
-            let found_key;
+            let found_keys = [];
             Object.keys(callingSession).forEach(key => {
                 if (key.indexOf(data.username) == 0) {
-                    io.to(users[callingsession[key].responder].id).emit('hangup', { username: data.username });
-                    found_key = key;
+                    io.to(users[callingSession[key].responder].id).emit('hangup', { username: data.username });
+                    found_keys.push(key);
                 } else if (key.indexOf(data.username) > 0) {
-                    io.to(users[callingsession[key].caller].id).emit('hangup', { username: data.username });
-                    found_key = key;
+                    io.to(users[callingSession[key].caller].id).emit('hangup', { username: data.username });
+                    found_keys.push(key);
                 }
             });
-            delete callingSession[found_key];
+            found_keys.forEach(key => delete callingSession[key]);
         } else {
             console.log(`Invalid hangup request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid hangup request", code: ERRORCODE.EHANGUP });
