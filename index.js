@@ -105,10 +105,10 @@ io.on('connection', function (socket) {
             users[data.username].iceCandidates.push(data.candidate);
             Object.keys(callingSession).forEach(key => {
                 if (key.indexOf(data.username) == 0) {
-                    io.to(users[callingsession[key].responder].id).emit('ice receive', { candidate: data.candidate });
+                    io.to(users[callingSession[key].responder].id).emit('ice receive', { candidate: data.candidate });
                     found_key = key;
                 } else if (key.indexOf(data.username) > 0) {
-                    io.to(users[callingsession[key].caller].id).emit('ice receive', { candidate: data.candidate });
+                    io.to(users[callingSession[key].caller].id).emit('ice receive', { candidate: data.candidate });
                     found_key = key;
                 }
             });
