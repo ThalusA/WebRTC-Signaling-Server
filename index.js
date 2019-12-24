@@ -66,7 +66,7 @@ io.on('connection', function (socket) {
     socket.on('call offer', function (data) {
         if (data.caller && data.responder && users[data.caller] && users[data.responder]) {
             console.log(`The user '${data.responder}' has answered to '${data.caller}'`);
-            io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: data.streamInfo, candidates: users[data.responder].iceCandidates });
+            io.to(users[data.caller].id).emit('call offer', { username: data.responder, streamInfo: data.streamInfo, candidates: users[data.responder].iceCandidates });
         } else {
             console.log(`Invalid call offer request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid call offer request", code: ERRORCODE.EACALL });
