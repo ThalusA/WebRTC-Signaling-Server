@@ -31,7 +31,7 @@ io.on('connection', function (socket) {
         console.log("Unregister Endpoint");
         if (data.username && users[data.username]) {
             console.log(`The user named '${data.username}' has been unregistered.`);
-            let found_key = [];
+            let found_keys = [];
             Object.keys(callingSession).forEach(key => key.includes(data.username) ? found_keys.push(key) : 0);
             found_keys.forEach(key => delete callingSession[key]);
             delete users[data.username];
