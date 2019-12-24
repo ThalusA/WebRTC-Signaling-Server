@@ -2,7 +2,7 @@ const PORT = process.env.SIGNALINGPORT || 8088;
 const io = require('socket.io')(PORT);
 
 let users = {};
-let callingSession = [];
+let callingSession = {};
 
 const ERRORCODE = {
     EREGISTER: 1,
@@ -31,14 +31,9 @@ io.on('connection', function (socket) {
         console.log("Unregister Endpoint");
         if (data.username && users[data.username]) {
             console.log(`The user named '${data.username}' has been unregistered.`);
-            callingSession.forEach(session => {
-                if (session.responder == data.username) {
-                    io.to(users[session.caller].id).emit('hangup', { username: data.username });
-                } else if (session.caller == data.username) {
-                    io.to(users[session.responder].id).emit('hangup', { username: data.username });
-                }
-            });
-            callingSession = callingSession.filter(session => session.responder != data.username && session.caller != data.username);
+            let found_key = [];
+            Object.keys(callingSession).forEach(key => key.includes(data.username) ? found_keys.push(key) : 0);
+            found_keys.forEach(key => delete callingSession[key]);
             delete users[data.username];
             socket.leave(socket.id);
         } else {
@@ -62,19 +57,19 @@ io.on('connection', function (socket) {
     socket.on('call answer', function (data) {
         if (data.caller && data.responder && data.streamInfo && users[data.responder] && users[data.caller]) {
             io.to(users[data.responder].id).emit('call answer', { username: data.caller, streamInfo: data.streamInfo, candidates: users[data.caller].iceCandidates });
-            callingSession.push({ caller: data.caller, responder: data.responder, date: Date.now() });
+            callingSession[data.caller + '/' + data.responder] = { caller: data.caller, responder: data.responder, date: Date.now() };
         } else {
             console.log(`Invalid call answer request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid call answer request", code: ERRORCODE.EANSCALL });
         }
     });
-    socket.on('call accept', function (data) {
+    socket.on('call offer', function (data) {
         if (data.caller && data.responder && users[data.caller] && users[data.responder]) {
             console.log(`The user '${data.responder}' has answered to '${data.caller}'`);
             io.to(users[data.caller].id).emit('call info', { username: data.responder, streamInfo: data.streamInfo, candidates: users[data.responder].iceCandidates });
         } else {
-            console.log(`Invalid call accept request :\n${JSON.stringify(data, null, 4)}`);
-            socket.emit("error", { error: "Invalid call accept request", code: ERRORCODE.EACALL });
+            console.log(`Invalid call offer request :\n${JSON.stringify(data, null, 4)}`);
+            socket.emit("error", { error: "Invalid call offer request", code: ERRORCODE.EACALL });
         }
     });
     socket.on('call deny', function (data) {
@@ -88,14 +83,17 @@ io.on('connection', function (socket) {
     });
     socket.on('hangup', function (data) {
         if (data.username && users[data.username]) {
-            callingSession.forEach(session => {
-                if (session.responder == data.username) {
-                    io.to(users[session.caller].id).emit('hangup', { username: data.username });
-                } else if (session.caller == data.username) {
-                    io.to(users[session.responder].id).emit('hangup', { username: data.username });
+            let found_key;
+            Object.keys(callingSession).forEach(key => {
+                if (key.indexOf(data.username) == 0) {
+                    io.to(users[callingsession[key].responder].id).emit('hangup', { username: data.username });
+                    found_key = key;
+                } else if (key.indexOf(data.username) > 0) {
+                    io.to(users[callingsession[key].caller].id).emit('hangup', { username: data.username });
+                    found_key = key;
                 }
             });
-            callingSession = callingSession.filter(session => session.responder != data.username && session.caller != data.username);
+            delete callingSession[found_key];
         } else {
             console.log(`Invalid hangup request :\n${JSON.stringify(data, null, 4)}`);
             socket.emit("error", { error: "Invalid hangup request", code: ERRORCODE.EHANGUP });
@@ -105,11 +103,13 @@ io.on('connection', function (socket) {
         if (data.username && data.candidate && users[data.username]) {
             console.log(`The user called '${data.username}' added to its ICECandidates : ${data.candidate.candidate}`);
             users[data.username].iceCandidates.push(data.candidate);
-            callingSession.forEach(session => {
-                if (session.responder == data.username) {
-                    io.to(users[session.caller].id).emit('ice receive', { candidate: data.candidate });
-                } else if (session.caller == data.username) {
-                    io.to(users[session.responder].id).emit('ice receive', { candidate: data.candidate });
+            Object.keys(callingSession).forEach(key => {
+                if (key.indexOf(data.username) == 0) {
+                    io.to(users[callingsession[key].responder].id).emit('ice receive', { candidate: data.candidate });
+                    found_key = key;
+                } else if (key.indexOf(data.username) > 0) {
+                    io.to(users[callingsession[key].caller].id).emit('ice receive', { candidate: data.candidate });
+                    found_key = key;
                 }
             });
         } else {
